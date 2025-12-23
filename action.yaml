@@ -1,0 +1,23 @@
+name: "Datadog STS"
+
+description: |
+  This action exchanges the workflow's identity token for
+  Datadog credentials according to a target trust policy.
+
+inputs:
+  domain:
+    description: The domain of the Datadog STS instance to use to federate.
+    default: webhooks.build.datadoghq.com
+
+  policy:
+    description: The name of the trust policy to use.
+    required: true
+
+outputs:
+  token:
+    description: The federated token to use for authentication.
+    value: ${{ steps.dd-sts.outputs.token }}
+
+runs:
+  using: "node20"
+  main: "index.js"
