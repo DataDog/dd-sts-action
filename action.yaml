@@ -14,9 +14,17 @@ inputs:
     required: true
 
 outputs:
-  token:
-    description: The federated token to use for authentication.
-    value: ${{ steps.dd-sts.outputs.token }}
+  api_key:
+    description: A Datadog API key.
+    value: ${{ steps.dd-sts.outputs.api_key }}
+
+  app_key:
+    description: A Datadog application key.
+    value: ${{ steps.dd-sts.outputs.app_key }}
+
+  app_key_expiration_timestamp:
+    description: The expiration timestamp of the application key.
+    value: ${{ steps.dd-sts.outputs.app_key_expiration_timestamp }}
 
 runs:
   using: "node20"
