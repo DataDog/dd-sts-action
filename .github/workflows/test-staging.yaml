@@ -1,0 +1,35 @@
+name: Test Staging
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  id-token: write # Needed to federate tokens
+  contents: read
+
+jobs:
+  test-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Get Datadog credentials (staging)
+        id: dd-sts
+        uses: ./
+        with:
+          domain: webhooks.build.datad0g.com
+          policy: dd-sts-action-test
+
+      - name: Verify credentials
+        env:
+          DD_API_KEY: ${{ steps.dd-sts.outputs.api_key }}
+          DD_SITE: datad0g.com
+        run: |
+          set -euo pipefail
+          resp="$(curl -fsS -H "DD-API-KEY: ${DD_API_KEY}" "https://api.${DD_SITE}/api/v1/validate")"
+          echo "$resp" | jq -e '.valid == true' > /dev/null
+          echo "Datadog API key is valid."

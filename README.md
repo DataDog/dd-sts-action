@@ -19,5 +19,8 @@ steps:
     DD_API_KEY: ${{ steps.dd-sts.outputs.api_key }}
     DD_APP_KEY: ${{ steps.dd-sts.outputs.app_key }}
   run: |
-    TODO
+    set -euo pipefail
+    resp="$(curl -fsS -H "DD-API-KEY: ${DD_API_KEY}" "https://api.${DD_SITE}/api/v1/validate")"
+    echo "$resp" | jq -e '.valid == true' > /dev/null
+    echo "Datadog API key is valid."
 ```
