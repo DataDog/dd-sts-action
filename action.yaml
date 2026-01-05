@@ -29,3 +29,5 @@ outputs:
 runs:
   using: "node20"
   main: "index.js"
+  post: "post.js"
+  post-if: success() || failure() # ensures the cleanup runs whether the workflow succeeds or fails, but only if an application key was actually returned
