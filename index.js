@@ -106,6 +106,12 @@ async function exchangeOidcForCredentials(domain, policy, oidcToken) {
             throw error;
         }
 
+        // Mask sensitive credentials in logs
+        console.log(`::add-mask::${credentials.api_key}`);
+        if (credentials.application_key) {
+            console.log(`::add-mask::${credentials.application_key}`);
+        }
+
         // Build output string with only present fields
         const outputParts = [`api_key=${credentials.api_key}`];
 
