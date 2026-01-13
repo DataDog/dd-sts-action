@@ -1,15 +1,22 @@
 'use strict';
 
 const appKey = process.env.STATE_APP_KEY;
-const domain = process.env.INPUT_DOMAIN;
 
-if (!appKey || !domain) {
+if (!appKey) {
     console.log('No application key to revoke, skipping cleanup.');
     process.exit(0);
 }
 
-async function revokeAppKey(domain, appKey) {
-    const url = `https://${domain}/sts/datadog/revoke`;
+const domain = process.env.INPUT_DOMAIN;
+const policy = process.env.INPUT_POLICY;
+
+if (!domain || !policy) {
+    console.log(`::error::Missing required inputs 'domain' or 'policy'`);
+    process.exit(1);
+}
+
+async function revokeAppKey(domain, policy, appKey) {
+    const url = `https://${domain}/sts/datadog/revoke?policy=${policy}`;
 
     try {
         const response = await fetch(url, {
@@ -35,5 +42,5 @@ async function revokeAppKey(domain, appKey) {
 }
 
 (async function main() {
-    await revokeAppKey(domain, appKey);
+    await revokeAppKey(domain, policy, appKey);
 })();
