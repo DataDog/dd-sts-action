@@ -21,7 +21,7 @@ if (!domain || !policy) {
 }
 
 async function revokeAppKey(domain, policy, appKey) {
-    const url = `https://${domain}/sts/datadog/revoke?policy=${policy}`;
+    const url = `https://${domain}/sts/datadog/revoke?policy=${encodeURIComponent(policy)}`;
 
     try {
         const response = await fetch(url, {
