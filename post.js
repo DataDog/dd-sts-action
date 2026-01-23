@@ -1,3 +1,8 @@
+/*
+* Unless explicitly stated otherwise all files in this repository are licensed under the MIT License.
+* Copyright 2026-present Datadog, Inc.
+*/
+
 'use strict';
 
 const appKey = process.env.STATE_APP_KEY;
