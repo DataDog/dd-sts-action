@@ -62,7 +62,7 @@ async function getOidcToken(actionsUrl, audience, actionsToken) {
 
 async function exchangeOidcForCredentials(domain, policy, oidcToken) {
     const res = await fetchWithRetry(
-        `https://${domain}/sts/datadog/exchange?policy=${policy}`,
+        `https://${domain}/sts/datadog/exchange?policy=${encodeURIComponent(policy)}`,
         {
             headers: {
                 'Authorization': `Bearer ${oidcToken}`,
