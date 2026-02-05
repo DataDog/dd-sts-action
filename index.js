@@ -18,10 +18,10 @@ if (!actionsToken || !actionsUrl) {
 
 const domain = process.env.INPUT_DOMAIN;
 const policy = process.env.INPUT_POLICY;
-const audience = "rapid-seceng-sit";
+const audience = process.env.INPUT_AUDIENCE;
 
-if (!domain || !policy) {
-    console.log(`::error::Missing required inputs 'domain' and 'policy'`);
+if (!domain || !policy || !audience) {
+    console.log(`::error::Missing required inputs 'domain', 'policy', and 'audience'`);
     process.exit(1);
 }
 
