@@ -15,7 +15,7 @@ steps:
   uses: DataDog/dd-sts-action@main
   with:
     policy: foo # policy filename excluding `.yaml`
-    audience: rapid-seceng-sit # must match the audience configured in your dd-sts policy
+    audience: dd-sts.us1.ddbuild.io # must match the audience configured in your dd-sts policy
 - env:
     DD_API_KEY: ${{ steps.dd-sts.outputs.api_key }}
     DD_APP_KEY: ${{ steps.dd-sts.outputs.app_key }}
