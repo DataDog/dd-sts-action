@@ -21,7 +21,6 @@ jobs:
         uses: ./
         with:
           policy: dd-sts-action-test
-          audience: dd-sts.us1.ddbuild.io
 
       - name: Verify credentials
         env:
