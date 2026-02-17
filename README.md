@@ -15,7 +15,6 @@ steps:
   uses: DataDog/dd-sts-action@main
   with:
     policy: foo # policy filename excluding `.yaml`
-    audience: dd-sts.us1.ddbuild.io # must match the audience configured in your dd-sts policy
 - env:
     DD_API_KEY: ${{ steps.dd-sts.outputs.api_key }}
     DD_APP_KEY: ${{ steps.dd-sts.outputs.app_key }}
@@ -30,7 +29,7 @@ steps:
 
 - `policy` (required): The name of the trust policy to use (excluding `.yaml` extension)
 - `domain` (required): The domain of the Datadog STS instance to use. Defaults to `webhooks.build.datadoghq.com` (must not be overwritten to the empty string).
-- `audience` (optional): The audience value for the OIDC token. Must match the audience configured in your dd-sts policy. Defaults to `rapid-seceng-sit`.
+- `audience` (optional): The audience value for the OIDC token. Must match the audience configured in your dd-sts policy. Defaults to `dd-sts`.
 
 ## Outputs
 
