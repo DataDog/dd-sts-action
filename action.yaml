@@ -13,6 +13,13 @@ inputs:
     description: The name of the trust policy to use.
     required: true
 
+  audience:
+    description: |
+      The audience value for the OIDC token.
+      Must match the audience configured in your dd-sts policy.
+      Defaults to `dd-sts` (the default audience for policies)
+    default: dd-sts
+
 outputs:
   api_key:
     description: A Datadog API key.

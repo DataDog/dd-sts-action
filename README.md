@@ -24,3 +24,15 @@ steps:
     echo "$resp" | jq -e '.valid == true' > /dev/null
     echo "Datadog API key is valid."
 ```
+
+## Inputs
+
+- `policy` (required): The name of the trust policy to use (excluding `.yaml` extension)
+- `domain` (required): The domain of the Datadog STS instance to use. Defaults to `webhooks.build.datadoghq.com` (must not be overwritten to the empty string).
+- `audience` (optional): The audience value for the OIDC token. Must match the audience configured in your dd-sts policy. Defaults to `dd-sts`.
+
+## Outputs
+
+- `api_key`: A Datadog API key
+- `app_key`: A Datadog application key (if provided by the policy)
+- `app_key_expiration_timestamp`: The expiration timestamp of the application key (if applicable)
