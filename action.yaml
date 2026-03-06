@@ -34,7 +34,7 @@ outputs:
     value: ${{ steps.dd-sts.outputs.app_key_expiration_timestamp }}
 
 runs:
-  using: "node20"
+  using: "node24"
   main: "index.js"
   post: "post.js"
   post-if: success() || failure() # ensures the cleanup runs whether the workflow succeeds or fails, but only if an application key was actually returned
