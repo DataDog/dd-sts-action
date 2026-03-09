@@ -5,16 +5,20 @@ on:
     branches:
       - main
 
-permissions:
-  id-token: write # Needed to federate tokens
-  contents: read
+permissions: {}
 
 jobs:
   test-prod:
+    name: Test Prod
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # Needed to federate tokens
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Get Datadog credentials (prod)
         id: dd-sts
