@@ -33,19 +33,30 @@ async function fetchWithRetry(url, options = {}, retries = 3, initialDelay = 100
 
     while (retries > 0) {
         try {
+            console.log(`::debug::Requesting ${options.method || 'GET'} ${url} (attempt ${attempt})`);
             const response = await fetch(url, options);
+            console.log(`::debug::Response from ${url}: HTTP ${response.status}`);
             if (!response.ok) {
                 const errorBody = await response.text();
-                throw new Error(`HTTP error! status: ${response.status}, ${errorBody}`);
+                const error = new Error(`HTTP error! status: ${response.status}, ${errorBody}`);
+                error.status = response.status;
+                throw error;
             }
 
             return response;
         } catch (error) {
-            console.warn(`Attempt ${attempt} failed. Error: ${error.message}`);
+            // 4XX responses indicate client errors that won't be fixed by retrying.
+            if (error.status >= 400 && error.status < 500) {
+                console.warn(`Request to ${url} failed with non-retryable status ${error.status}.`);
+                throw error;
+            }
+
+            console.warn(`Attempt ${attempt} for ${url} failed. Error: ${error.message}`);
 
             const jitter = Math.floor(Math.random() * 5000);
             const delay = Math.min(2 ** attempt * initialDelay + jitter, 10000); // Limit max delay to 10 seconds
 
+            console.log(`::debug::Retrying ${url} in ${delay}ms`);
             await new Promise(resolve => setTimeout(resolve, delay));
 
             attempt++;
@@ -57,13 +68,20 @@ async function fetchWithRetry(url, options = {}, retries = 3, initialDelay = 100
 }
 
 async function getOidcToken(actionsUrl, audience, actionsToken) {
+    console.log(`Requesting GitHub OIDC token with audience '${audience}'...`);
     const res = await fetchWithRetry(`${actionsUrl}&audience=${audience}`, { headers: { 'Authorization': `Bearer ${actionsToken}` } }, 5);
     const json = await res.json();
 
+    if (!json.value) {
+        throw new Error('GitHub OIDC token response did not include a token value.');
+    }
+
+    console.log('Successfully retrieved GitHub OIDC token.');
     return json.value;
 }
 
 async function exchangeOidcForCredentials(domain, policy, oidcToken) {
+    console.log(`Exchanging OIDC token for Datadog credentials at '${domain}' using policy '${policy}'...`);
     const res = await fetchWithRetry(
         `https://${domain}/sts/datadog/exchange?policy=${encodeURIComponent(policy)}`,
         {
@@ -80,12 +98,15 @@ async function exchangeOidcForCredentials(domain, policy, oidcToken) {
         throw new Error(json.message || 'Missing api_key in response');
     }
 
+    console.log('Received credentials');
     return json;
 }
 
 
 (async function main() {
     try {
+        console.log(`Starting dd-sts-action with domain='${domain}', policy='${policy}', audience='${audience}'.`);
+
         const oidcToken = await getOidcToken(actionsUrl, audience, actionsToken);
 
         let credentials;
@@ -93,6 +114,8 @@ async function exchangeOidcForCredentials(domain, policy, oidcToken) {
         try {
             credentials = await exchangeOidcForCredentials(domain, policy, oidcToken);
         } catch (error) {
+            console.log(`::error::Failed to exchange OIDC token for Datadog credentials: ${error.message}`);
+
             const claims = JSON.parse(Buffer.from(oidcToken.split('.')[1], 'base64').toString());
             const serializedClaims = JSON.stringify(claims, null, 2);
 
@@ -133,10 +156,7 @@ async function exchangeOidcForCredentials(domain, policy, oidcToken) {
 
         fs.appendFile(process.env.GITHUB_OUTPUT, outputParts.join('\n'), function (err) { if (err) throw err; });
 
-        // Save state for post cleanup
-        if (credentials.application_key) {
-            fs.appendFileSync(process.env.GITHUB_STATE, `APP_KEY=${credentials.application_key}\n`);
-        }
+        console.log('dd-sts-action completed successfully.');
     } catch (err) {
         console.log(`::error::${err.stack}`);
         process.exit(1);
