@@ -36,11 +36,18 @@ async function fetchWithRetry(url, options = {}, retries = 3, initialDelay = 100
             const response = await fetch(url, options);
             if (!response.ok) {
                 const errorBody = await response.text();
-                throw new Error(`HTTP error! status: ${response.status}, ${errorBody}`);
+                const error = new Error(`HTTP error! status: ${response.status}, ${errorBody}`);
+                error.status = response.status;
+                throw error;
             }
 
             return response;
         } catch (error) {
+            // 4XX responses indicate client errors that won't be fixed by retrying.
+            if (error.status >= 400 && error.status < 500) {
+                throw error;
+            }
+
             console.warn(`Attempt ${attempt} failed. Error: ${error.message}`);
 
             const jitter = Math.floor(Math.random() * 5000);
