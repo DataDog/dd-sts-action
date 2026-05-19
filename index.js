@@ -139,11 +139,6 @@ async function exchangeOidcForCredentials(domain, policy, oidcToken) {
         }
 
         fs.appendFile(process.env.GITHUB_OUTPUT, outputParts.join('\n'), function (err) { if (err) throw err; });
-
-        // Save state for post cleanup
-        if (credentials.application_key) {
-            fs.appendFileSync(process.env.GITHUB_STATE, `APP_KEY=${credentials.application_key}\n`);
-        }
     } catch (err) {
         console.log(`::error::${err.stack}`);
         process.exit(1);
