@@ -154,7 +154,7 @@ async function exchangeOidcForCredentials(domain, policy, oidcToken) {
             outputParts.push(`app_key_expiration_timestamp=${credentials.expires_at}`);
         }
 
-        fs.appendFile(process.env.GITHUB_OUTPUT, outputParts.join('\n'), function (err) { if (err) throw err; });
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, outputParts.join('\n'));
 
         console.log('dd-sts-action completed successfully.');
     } catch (err) {
