@@ -32,10 +32,11 @@ async function fetchWithRetry(url, options = {}, retries = 3, initialDelay = 100
     let attempt = 1;
 
     while (retries > 0) {
+        const start = Date.now();
         try {
             console.log(`::debug::Requesting ${options.method || 'GET'} ${url} (attempt ${attempt})`);
             const response = await fetch(url, options);
-            console.log(`::debug::Response from ${url}: HTTP ${response.status}`);
+            console.log(`Response from ${url}: HTTP ${response.status} (${Date.now() - start}ms)`);
             if (!response.ok) {
                 const errorBody = await response.text();
                 const error = new Error(`HTTP error! status: ${response.status}, ${errorBody}`);
@@ -45,13 +46,17 @@ async function fetchWithRetry(url, options = {}, retries = 3, initialDelay = 100
 
             return response;
         } catch (error) {
+            const elapsed = Date.now() - start;
+
             // 4XX responses indicate client errors that won't be fixed by retrying.
             if (error.status >= 400 && error.status < 500) {
-                console.warn(`Request to ${url} failed with non-retryable status ${error.status}.`);
+                console.warn(`Request to ${url} failed with non-retryable status ${error.status} (${elapsed}ms).`);
                 throw error;
             }
 
-            console.warn(`Attempt ${attempt} for ${url} failed. Error: ${error.message}`);
+            const details = [error.message, error.code && `code=${error.code}`, error.cause && `cause=${error.cause}`]
+                .filter(Boolean).join(', ');
+            console.warn(`Attempt ${attempt} for ${url} failed after ${elapsed}ms: ${details}`);
 
             const jitter = Math.floor(Math.random() * 5000);
             const delay = Math.min(2 ** attempt * initialDelay + jitter, 10000); // Limit max delay to 10 seconds
@@ -81,9 +86,10 @@ async function getOidcToken(actionsUrl, audience, actionsToken) {
 }
 
 async function exchangeOidcForCredentials(domain, policy, oidcToken) {
-    console.log(`Exchanging OIDC token for Datadog credentials at '${domain}' using policy '${policy}'...`);
+    const exchangeUrl = `https://${domain}/sts/datadog/exchange?policy=${encodeURIComponent(policy)}`;
+    console.log(`Exchanging OIDC token for Datadog credentials at '${exchangeUrl}'...`);
     const res = await fetchWithRetry(
-        `https://${domain}/sts/datadog/exchange?policy=${encodeURIComponent(policy)}`,
+        exchangeUrl,
         {
             headers: {
                 'Authorization': `Bearer ${oidcToken}`,
