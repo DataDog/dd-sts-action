@@ -20,6 +20,10 @@ inputs:
       Defaults to `dd-sts` (the default audience for policies)
     default: dd-sts
 
+  retries:
+    description: The number of attempts to make when a request fails with a retryable error.
+    default: "3"
+
 outputs:
   api_key:
     description: A Datadog API key.

@@ -20,6 +20,7 @@ if (!actionsToken || !actionsUrl) {
 const domain = process.env.INPUT_DOMAIN;
 const policy = process.env.INPUT_POLICY;
 const audience = process.env.INPUT_AUDIENCE;
+const retries = parseInt(process.env.INPUT_RETRIES, 10) || 3;
 
 // note that audience has a default value so it's required here
 // but it's not required for the user to set it in the workflow
@@ -72,9 +73,9 @@ async function fetchWithRetry(url, options = {}, retries = 3, initialDelay = 100
     throw new Error(`Fetch failed after ${attempt} attempts.`);
 }
 
-async function getOidcToken(actionsUrl, audience, actionsToken) {
+async function getOidcToken(actionsUrl, audience, actionsToken, retries) {
     console.log(`Requesting GitHub OIDC token with audience '${audience}'...`);
-    const res = await fetchWithRetry(`${actionsUrl}&audience=${audience}`, { headers: { 'Authorization': `Bearer ${actionsToken}` } }, 5);
+    const res = await fetchWithRetry(`${actionsUrl}&audience=${audience}`, { headers: { 'Authorization': `Bearer ${actionsToken}` } }, retries);
     const json = await res.json();
 
     if (!json.value) {
@@ -85,7 +86,7 @@ async function getOidcToken(actionsUrl, audience, actionsToken) {
     return json.value;
 }
 
-async function exchangeOidcForCredentials(domain, policy, oidcToken) {
+async function exchangeOidcForCredentials(domain, policy, oidcToken, retries) {
     const exchangeUrl = `https://${domain}/sts/datadog/exchange?policy=${encodeURIComponent(policy)}`;
     console.log(`Exchanging OIDC token for Datadog credentials at '${exchangeUrl}'...`);
     const res = await fetchWithRetry(
@@ -95,7 +96,8 @@ async function exchangeOidcForCredentials(domain, policy, oidcToken) {
                 'Authorization': `Bearer ${oidcToken}`,
                 'x-datadog-target-release': 'dd-sts.dd-sts'
             }
-        }
+        },
+        retries
     );
 
     const json = await res.json();
@@ -111,14 +113,14 @@ async function exchangeOidcForCredentials(domain, policy, oidcToken) {
 
 (async function main() {
     try {
-        console.log(`Starting dd-sts-action with domain='${domain}', policy='${policy}', audience='${audience}'.`);
+        console.log(`Starting dd-sts-action with domain='${domain}', policy='${policy}', audience='${audience}', retries='${retries}'.`);
 
-        const oidcToken = await getOidcToken(actionsUrl, audience, actionsToken);
+        const oidcToken = await getOidcToken(actionsUrl, audience, actionsToken, retries);
 
         let credentials;
 
         try {
-            credentials = await exchangeOidcForCredentials(domain, policy, oidcToken);
+            credentials = await exchangeOidcForCredentials(domain, policy, oidcToken, retries);
         } catch (error) {
             console.log(`::error::Failed to exchange OIDC token for Datadog credentials: ${error.message}`);
 
