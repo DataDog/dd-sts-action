@@ -20,7 +20,8 @@ if (!actionsToken || !actionsUrl) {
 const domain = process.env.INPUT_DOMAIN;
 const policy = process.env.INPUT_POLICY;
 const audience = process.env.INPUT_AUDIENCE;
-const retries = parseInt(process.env.INPUT_RETRIES, 10) || 3;
+const parsedRetries = parseInt(process.env.INPUT_RETRIES, 10);
+const retries = Number.isInteger(parsedRetries) && parsedRetries >= 0 ? parsedRetries : 5;
 
 // note that audience has a default value so it's required here
 // but it's not required for the user to set it in the workflow
@@ -29,10 +30,10 @@ if (!domain || !policy || !audience) {
     process.exit(1);
 }
 
-async function fetchWithRetry(url, options = {}, retries = 3, initialDelay = 1000) {
-    let attempt = 1;
+async function fetchWithRetry(url, options = {}, retries = 5, initialDelay = 1000) {
+    const maxAttempts = retries + 1;
 
-    while (retries > 0) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         const start = Date.now();
         try {
             console.log(`::debug::Requesting ${options.method || 'GET'} ${url} (attempt ${attempt})`);
@@ -59,18 +60,18 @@ async function fetchWithRetry(url, options = {}, retries = 3, initialDelay = 100
                 .filter(Boolean).join(', ');
             console.warn(`Attempt ${attempt} for ${url} failed after ${elapsed}ms: ${details}`);
 
+            // No retries left; surface the underlying error.
+            if (attempt >= maxAttempts) {
+                throw error;
+            }
+
             const jitter = Math.floor(Math.random() * 5000);
             const delay = Math.min(2 ** attempt * initialDelay + jitter, 10000); // Limit max delay to 10 seconds
 
             console.log(`::debug::Retrying ${url} in ${delay}ms`);
             await new Promise(resolve => setTimeout(resolve, delay));
-
-            attempt++;
-            retries--;
         }
     }
-
-    throw new Error(`Fetch failed after ${attempt} attempts.`);
 }
 
 async function getOidcToken(actionsUrl, audience, actionsToken, retries) {

@@ -22,7 +22,7 @@ inputs:
 
   retries:
     description: The number of attempts to make when a request fails with a retryable error.
-    default: "3"
+    default: "5"
 
 outputs:
   api_key:
